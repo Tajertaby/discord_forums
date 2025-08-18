@@ -119,18 +119,17 @@ class CloseButton(BaseButton):
 
     async def _close_thread(self, interaction: discord.Interaction):
         """Close the thread and cleanup tracking."""
+        embed = create_embed(
+            title="🔒 Post Closed!",
+            description=f"This post has been closed by {interaction.user.mention} ({interaction.user.name}).",
+        )
+        await interaction.followup.send(embed=embed)
         await self.thread.edit(
             archived=True,
             locked=True,
             applied_tags=self.bot.tags.solved_closed,
             reason=f"Closed by {interaction.user}",
         )
-
-        embed = create_embed(
-            title="🔒 Post Closed!",
-            description=f"This post has been closed by {interaction.user.mention} ({interaction.user.name}).",
-        )
-        await interaction.followup.send(embed=embed)
 
         # Cleanup tracking
         self.bot.cleanup_thread_tracking(self.thread.id, self.thread.owner.id)
@@ -159,9 +158,7 @@ class MarkPriorityButton(BaseButton):
             self.add_item(self.reason)
 
         async def on_submit(self, interaction: discord.Interaction):
-            await self.parent.process_bump(
-                interaction, f"{self.reason.value}"
-            )
+            await self.parent.process_bump(interaction, f"{self.reason.value}")
 
     async def callback(self, interaction: discord.Interaction):
         if not self.thread:
@@ -442,6 +439,12 @@ class DiscordBot(commands.Bot):
             existing_thread_id = self.track_posts[thread.owner.id][0]
             existing_thread = self.get_channel(existing_thread_id)
 
+            embed = create_embed(
+                title="Already Posted",
+                description=f"Closing this post because you already have an [active post]({existing_thread.jump_url if existing_thread else 'unknown'}).",
+            )
+            await thread.send(thread.owner.mention, embed=embed)
+
             await thread.edit(
                 archived=True,
                 locked=True,
@@ -449,11 +452,6 @@ class DiscordBot(commands.Bot):
                 reason="OP already has an active post.",
             )
 
-            embed = create_embed(
-                title="Already Posted",
-                description=f"Closing this post because you already have an [active post]({existing_thread.jump_url if existing_thread else 'unknown'}).",
-            )
-            await thread.send(thread.owner.mention, embed=embed)
             return True
         return False
 
@@ -499,9 +497,14 @@ class DiscordBot(commands.Bot):
     async def on_message(self, message: discord.Message):
         """Handle message events."""
         await self.process_commands(message)
-
-        if isinstance(message.channel, discord.Thread):
+        thread = message.channel
+        if (
+            isinstance(message.channel, discord.Thread)
+            and self.tags.solved_closed[0] not in thread.applied_tags
+        ):
             await self._handle_thread_message(message)
+        elif self.tags.solved_closed[0] in thread.applied_tags:
+            thread.edit(archived=True)
 
     async def _handle_thread_message(self, message: discord.Message):
         """Handle messages in threads."""
@@ -559,18 +562,18 @@ class DiscordBot(commands.Bot):
 
     async def _close_thread_on_leave(self, thread: discord.Thread):
         """Close thread when member leaves."""
+        embed = create_embed(
+            title="🔒 Post Closed!",
+            description="This post has been closed due to the original poster leaving the server.",
+        )
+        await thread.send(embed=embed)
+
         await thread.edit(
             archived=True,
             locked=True,
             applied_tags=self.tags.solved_closed,
             reason="Automatically closed - OP left the server",
         )
-
-        embed = create_embed(
-            title="🔒 Post Closed!",
-            description="This post has been closed due to the original poster leaving the server.",
-        )
-        await thread.send(embed=embed)
 
     async def schedule_thread_reminder(self, thread: discord.Thread):
         """Schedule a reminder for inactive thread."""
@@ -629,21 +632,18 @@ class DiscordBot(commands.Bot):
 
     async def _auto_close_inactive_thread(self, thread: discord.Thread):
         """Auto-close an inactive thread."""
-        try:
-            embed = create_embed(
-                title="🔒 Post Closed!",
-                description="This post has been closed due to inactivity.",
-            )
-            await thread.send(embed=embed)
+        embed = create_embed(
+            title="🔒 Post Closed!",
+            description="This post has been closed due to inactivity.",
+        )
+        await thread.send(embed=embed)
 
-            await thread.edit(
-                archived=True,
-                locked=True,
-                applied_tags=self.tags.solved_closed,
-                reason="Inactivity for 24 hours",
-            )
-        except discord.HTTPException:
-            pass
+        await thread.edit(
+            archived=True,
+            locked=True,
+            applied_tags=self.tags.solved_closed,
+            reason="Inactivity for 24 hours",
+        )
 
     @check_inactivity_task.before_loop
     async def before_check_inactivity(self):
