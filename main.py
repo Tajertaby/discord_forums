@@ -421,6 +421,12 @@ class DiscordBot(commands.Bot):
         # Setup new thread
         await self._setup_new_thread(thread)
 
+    async def on_thread_delete(self, thread: discord.Thread):
+        """Handle thread deletion"""
+        if thread.parent_id != Config.TROUBLESHOOT_FORUM_ID:
+            return
+        self.cleanup_thread_tracking(thread.id, thread.owner.id)
+
     async def _handle_duplicate_post(self, thread: discord.Thread) -> bool:
         """Handle duplicate posts by the same user."""
         if thread.owner.id in self.track_posts:
