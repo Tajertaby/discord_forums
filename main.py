@@ -264,11 +264,15 @@ class StaffTools(BaseButton):
     async def callback(self, interaction: discord.Interaction):
         if self.has_permission(interaction.user):
             await interaction.response.send_message(
-                embed=create_embed(title="Staff Options"), view=self.staff_view, ephemeral=True
+                embed=create_embed(title="Staff Options"),
+                view=self.staff_view,
+                ephemeral=True,
             )
         else:
             await self.send_permission_denied(
-                interaction, "You do not have permission to access staff tools!", response=True
+                interaction,
+                "You do not have permission to access staff tools!",
+                response=True,
             )
 
 
@@ -425,6 +429,11 @@ class DiscordBot(commands.Bot):
         """Handle thread deletion"""
         if thread.parent_id != Config.TROUBLESHOOT_FORUM_ID:
             return
+
+        # Check if post is closed or not
+        if self.tags.solved_closed[0] in thread.applied_tags:
+            return
+
         self.cleanup_thread_tracking(thread.id, thread.owner.id)
 
     async def _handle_duplicate_post(self, thread: discord.Thread) -> bool:
@@ -462,7 +471,8 @@ class DiscordBot(commands.Bot):
 
         embed = create_embed(
             title="Troubleshooting Questions",
-            description="1. What is the issue?\n"
+            description="Please answer the questions below. Do not create a new post if you have an active one; it will be auto-closed."
+            "1. What is the issue?\n"
             "2. What fixes you tried?\n"
             "3. What are your specs? If your PC turns on, download [HWInfo](https://www.hwinfo.com/download/) to find out. "
             "Alternatively, post a photo inside of your PC.\n"
@@ -472,7 +482,9 @@ class DiscordBot(commands.Bot):
             "Extra information?",
         )
 
-        message = await thread.send(embed=embed, view=opening_view)
+        message = await thread.send(
+            thread.owner.mention, embed=embed, view=opening_view
+        )
         await message.pin()
 
         # Initialize tracking
