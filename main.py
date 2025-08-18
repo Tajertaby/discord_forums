@@ -469,7 +469,7 @@ class DiscordBot(commands.Bot):
 
         embed = create_embed(
             title="Troubleshooting Questions",
-            description="Please answer the questions below. Do not create a new post if you have an active one; it will be auto-closed."
+            description="Please answer the questions below. Do not create a new post if you have an active one; it will be auto-closed.\n\n"
             "1. What is the issue?\n"
             "2. What fixes you tried?\n"
             "3. What are your specs? If your PC turns on, download [HWInfo](https://www.hwinfo.com/download/) to find out. "
@@ -508,6 +508,7 @@ class DiscordBot(commands.Bot):
     async def _handle_thread_message(self, message: discord.Message):
         """Handle messages in threads."""
         thread = message.channel
+        print(thread.owner.id not in self.track_posts)
 
         if (
             thread.parent_id != Config.TROUBLESHOOT_FORUM_ID
@@ -515,6 +516,7 @@ class DiscordBot(commands.Bot):
             or thread.owner.id not in self.track_posts
         ):
             return
+
 
         previous_user_id = self.track_posts[thread.owner.id][1]
 
@@ -526,7 +528,6 @@ class DiscordBot(commands.Bot):
         self.track_posts[thread.owner.id][1] = message.author.id
         self.thread_activity[thread.id] = datetime.datetime.now(datetime.timezone.utc)
         self.bump_bool[thread.id] = False
-
         # Update thread status
         if self.tags.in_progress[0] not in thread.applied_tags:
             await thread.edit(applied_tags=self.tags.in_progress)
