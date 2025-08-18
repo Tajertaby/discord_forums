@@ -498,13 +498,12 @@ class DiscordBot(commands.Bot):
         """Handle message events."""
         await self.process_commands(message)
         thread = message.channel
-        if (
-            isinstance(message.channel, discord.Thread)
-            and self.tags.solved_closed[0] not in thread.applied_tags
-        ):
-            await self._handle_thread_message(message)
-        elif self.tags.solved_closed[0] in thread.applied_tags:
-            thread.edit(archived=True)
+        if (isinstance(message.channel, discord.Thread)):
+            if self.tags.solved_closed[0] not in thread.applied_tags:
+                await self._handle_thread_message(message)
+            else:
+                # Keep closed posts closed when new message is sent
+                await thread.edit(archived=True)
 
     async def _handle_thread_message(self, message: discord.Message):
         """Handle messages in threads."""
