@@ -160,7 +160,7 @@ class MarkPriorityButton(BaseButton):
 
         async def on_submit(self, interaction: discord.Interaction):
             await self.parent.process_bump(
-                interaction, f"Staff Reason: {self.reason.value}"
+                interaction, f"{self.reason.value}"
             )
 
     async def callback(self, interaction: discord.Interaction):
