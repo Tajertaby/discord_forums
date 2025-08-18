@@ -428,7 +428,7 @@ class DiscordBot(commands.Bot):
             return
 
         # Check if post is closed or not
-        if self.tags.solved_closed in thread.applied_tags:
+        if self.tags.solved_closed[0] in thread.applied_tags:
             return
 
         self.cleanup_thread_tracking(thread.id, thread.owner.id)
@@ -500,10 +500,10 @@ class DiscordBot(commands.Bot):
         thread = message.channel
         if (
             isinstance(message.channel, discord.Thread)
-            and self.tags.solved_closed not in thread.applied_tags
+            and self.tags.solved_closed[0] not in thread.applied_tags
         ):
             await self._handle_thread_message(message)
-        elif self.tags.solved_closed in thread.applied_tags:
+        elif self.tags.solved_closed[0] in thread.applied_tags:
             thread.edit(archived=True)
 
     async def _handle_thread_message(self, message: discord.Message):
@@ -529,7 +529,7 @@ class DiscordBot(commands.Bot):
         self.bump_bool[thread.id] = False
 
         # Update thread status
-        if self.tags.in_progress not in thread.applied_tags:
+        if self.tags.in_progress[0] not in thread.applied_tags:
             await thread.edit(applied_tags=self.tags.in_progress)
 
         # Reset reminder
