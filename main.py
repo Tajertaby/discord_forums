@@ -453,7 +453,7 @@ class DiscordBot(commands.Bot):
                 title="Already Posted",
                 description=f"Closing this post because you already have an [active post]({existing_thread.jump_url if existing_thread else 'unknown'}).",
             )
-            await thread.send(embed=embed)
+            await thread.send(thread.owner.mention, embed=embed)
             return True
         return False
 
