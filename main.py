@@ -529,7 +529,8 @@ class DiscordBot(commands.Bot):
         self.bump_bool[thread.id] = False
 
         # Update thread status
-        await thread.edit(applied_tags=self.tags.in_progress)
+        if self.tags.in_progress not in thread.applied_tags:
+            await thread.edit(applied_tags=self.tags.in_progress)
 
         # Reset reminder
         await self._reset_thread_reminder(thread)
