@@ -32,8 +32,8 @@ class Config:
     TROUBLESHOOT_FORUM_ID = 1184892779671851068
     STAFF_ID = [1052986282273407017]
     BUMP_CHANNEL_ID = 1211083331546914866
-    REMINDER_TIME = 12 * 3600
-    AUTO_CLOSE_TIME = 24 * 3600
+    REMINDER_TIME = 24 * 3600
+    AUTO_CLOSE_TIME = 48 * 3600
     CLOSE_ON_LEAVE = True
 
 
@@ -124,10 +124,11 @@ class CloseButton(BaseButton):
             description=f"This post has been closed by {interaction.user.mention} ({interaction.user.name}).",
         )
         await interaction.followup.send(embed=embed)
+        post_tags = self.track_posts[2].append(self.tag.solved_closed)
         await self.thread.edit(
             archived=True,
             locked=True,
-            applied_tags=self.bot.tags.solved_closed,
+            applied_tags=post_tags,
             reason=f"Closed by {interaction.user}",
         )
 
@@ -320,10 +321,10 @@ class ForumTags:
     """Container for forum tags."""
 
     def __init__(self, forum_channel: discord.ForumChannel):
-        self.awaiting_response = [forum_channel.get_tag(1184982256423551006)]
-        self.in_progress = [forum_channel.get_tag(1185355746146275368)]
-        self.solved_closed = [forum_channel.get_tag(1185355888102490112)]
-        self.inactive = [forum_channel.get_tag(1406317680289644646)]
+        self.awaiting_response = forum_channel.get_tag(1184982256423551006)
+        self.in_progress = forum_channel.get_tag(1185355746146275368)
+        self.solved_closed = forum_channel.get_tag(1185355888102490112)
+        self.inactive = forum_channel.get_tag(1406317680289644646)
 
 
 class ThreadManager:
@@ -428,7 +429,7 @@ class DiscordBot(commands.Bot):
             return
 
         # Check if post is closed or not
-        if self.tags.solved_closed[0] in thread.applied_tags:
+        if self.tags.solved_closed in thread.applied_tags:
             return
 
         self.cleanup_thread_tracking(thread.id, thread.owner.id)
@@ -458,10 +459,10 @@ class DiscordBot(commands.Bot):
     async def _setup_new_thread(self, thread: discord.Thread):
         """Setup a new thread with initial configuration."""
         # Track the thread
-        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id]
-
+        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, thread.applied_tags]
+        post_tags = self.track_posts[2].append(self.tags.awaiting_response)
         # Configure thread
-        await thread.edit(slowmode_delay=2, applied_tags=self.tags.awaiting_response)
+        await thread.edit(slowmode_delay=2, applied_tags=post_tags)
 
         # Create and send initial message
         staff_view = StaffToolsView(self)
@@ -499,7 +500,7 @@ class DiscordBot(commands.Bot):
         await self.process_commands(message)
         thread = message.channel
         if (isinstance(message.channel, discord.Thread)):
-            if self.tags.solved_closed[0] not in thread.applied_tags:
+            if self.tags.solved_closed not in thread.applied_tags:
                 await self._handle_thread_message(message)
             else:
                 # Keep closed posts closed when new message is sent
@@ -508,7 +509,6 @@ class DiscordBot(commands.Bot):
     async def _handle_thread_message(self, message: discord.Message):
         """Handle messages in threads."""
         thread = message.channel
-        print(thread.owner.id not in self.track_posts)
 
         if (
             thread.parent_id != Config.TROUBLESHOOT_FORUM_ID
@@ -529,8 +529,9 @@ class DiscordBot(commands.Bot):
         self.thread_activity[thread.id] = datetime.datetime.now(datetime.timezone.utc)
         self.bump_bool[thread.id] = False
         # Update thread status
-        if self.tags.in_progress[0] not in thread.applied_tags:
-            await thread.edit(applied_tags=self.tags.in_progress)
+        if self.tags.in_progress not in thread.applied_tags:
+            post_tags = self.track_posts[2].append(self.tags.in_progress)
+            await thread.edit(applied_tags=post_tags)
 
         # Reset reminder
         await self._reset_thread_reminder(thread)
@@ -568,11 +569,11 @@ class DiscordBot(commands.Bot):
             description="This post has been closed due to the original poster leaving the server.",
         )
         await thread.send(embed=embed)
-
+        post_tags = self.track_posts[2].append(self.tag.solved_closed)
         await thread.edit(
             archived=True,
             locked=True,
-            applied_tags=self.tags.solved_closed,
+            applied_tags=post_tags,
             reason="Automatically closed - OP left the server",
         )
 
@@ -602,11 +603,12 @@ class DiscordBot(commands.Bot):
         embed = create_embed(
             title="⚠️ Inactivity Notice",
             description=f"This post has been inactive since <t:{int(last_active.timestamp())}:R>.\n"
-            "The post will close without warning if there is inactivity for 24 hours.",
+            "The post will close without warning if there is inactivity for 48 hours.",
         )
 
         await thread.send(thread.owner.mention, embed=embed, view=view)
-        await thread.edit(applied_tags=self.tags.inactive)
+        post_tags = self.track_posts[2].append(self.tags.inactive)
+        await thread.edit(applied_tags=post_tags)
 
     @tasks.loop(minutes=10)
     async def check_inactivity_task(self):
@@ -638,12 +640,12 @@ class DiscordBot(commands.Bot):
             description="This post has been closed due to inactivity.",
         )
         await thread.send(embed=embed)
-
+        post_tags = self.track_posts[2].append(self.tags.solved_closed)
         await thread.edit(
             archived=True,
             locked=True,
-            applied_tags=self.tags.solved_closed,
-            reason="Inactivity for 24 hours",
+            applied_tags=post_tags,
+            reason="Inactivity for 48 hours",
         )
 
     @check_inactivity_task.before_loop
