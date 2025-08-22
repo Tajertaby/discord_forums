@@ -449,7 +449,7 @@ class DiscordBot(commands.Bot):
             await thread.edit(
                 archived=True,
                 locked=True,
-                applied_tags=post_tags
+                applied_tags=post_tags,
                 reason="OP already has an active post.",
             )
 
