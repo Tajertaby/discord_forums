@@ -459,8 +459,8 @@ class DiscordBot(commands.Bot):
         """Setup a new thread with initial configuration."""
         # Track the thread
         user_tags = tuple(thread.applied_tags.copy())
-        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, list(user_tags)]
-        post_tags = self.track_posts[thread.owner.id][2]
+        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, user_tags]
+        post_tags = list(self.track_posts[thread.owner.id][2])
         post_tags.append(self.tags.awaiting_response)
 
         # Configure thread
@@ -532,7 +532,7 @@ class DiscordBot(commands.Bot):
         self.bump_bool[thread.id] = False
         # Update thread status
         if self.tags.in_progress not in thread.applied_tags:
-            post_tags = self.track_posts[thread.owner.id][2]
+            post_tags = list(self.track_posts[thread.owner.id][2])
             post_tags.append(self.tags.in_progress)
             await thread.edit(applied_tags=post_tags)
 
@@ -609,7 +609,7 @@ class DiscordBot(commands.Bot):
         )
 
         await thread.send(thread.owner.mention, embed=embed, view=view)
-        post_tags = self.track_posts[thread.owner.id][2]
+        post_tags = list(self.track_posts[thread.owner.id][2])
         post_tags.append(self.tag.inactive)
         await thread.edit(applied_tags=post_tags)
 
