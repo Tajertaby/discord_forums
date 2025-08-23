@@ -458,10 +458,11 @@ class DiscordBot(commands.Bot):
     async def _setup_new_thread(self, thread: discord.Thread):
         """Setup a new thread with initial configuration."""
         # Track the thread
-        user_tags = thread.applied_tags.copy()
-        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, user_tags]
+        user_tags = tuple(thread.applied_tags.copy())
+        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, list(user_tags)]
         post_tags = self.track_posts[thread.owner.id][2]
         post_tags.append(self.tags.awaiting_response)
+
         # Configure thread
         await thread.edit(slowmode_delay=2, applied_tags=post_tags)
 
