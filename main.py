@@ -1,3 +1,4 @@
+from aiohttp import parse_content_disposition
 import discord
 from discord.ext import tasks, commands
 import datetime
@@ -124,7 +125,8 @@ class CloseButton(BaseButton):
             description=f"This post has been closed by {interaction.user.mention} ({interaction.user.name}).",
         )
         await interaction.followup.send(embed=embed)
-        post_tags = self.track_posts[self.thread.owner.id][2] + self.tag.solved_closed
+        post_tags = self.track_posts[self.thread.owner.id][2]
+        post_tags+ self.tag.solved_closed
         await self.thread.edit(
             archived=True,
             locked=True,
@@ -445,7 +447,8 @@ class DiscordBot(commands.Bot):
                 description=f"Closing this post because you already have an [active post]({existing_thread.jump_url if existing_thread else 'unknown'}).",
             )
             await thread.send(thread.owner.mention, embed=embed)
-            post_tags = self.track_posts[thread.owner.id][2] + self.tags.solved_closed
+            post_tags = self.track_posts[thread.owner.id][2]
+            post_tags.append(self.tags.solved_closed)
             await thread.edit(
                 archived=True,
                 locked=True,
@@ -460,7 +463,8 @@ class DiscordBot(commands.Bot):
         """Setup a new thread with initial configuration."""
         # Track the thread
         self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, thread.applied_tags]
-        post_tags = self.track_posts[thread.owner.id][2] + self.tags.awaiting_response
+        post_tags = self.track_posts[thread.owner.id][2]
+        post_tags.append(self.tags.awaiting_response)
         # Configure thread
         await thread.edit(slowmode_delay=2, applied_tags=post_tags)
 
@@ -530,7 +534,8 @@ class DiscordBot(commands.Bot):
         self.bump_bool[thread.id] = False
         # Update thread status
         if self.tags.in_progress not in thread.applied_tags:
-            post_tags = self.track_posts[thread.owner.id][2] + self.tags.in_progress
+            post_tags = self.track_posts[thread.owner.id][2]
+            post_tags.append(self.tags.in_progress)
             await thread.edit(applied_tags=post_tags)
 
         # Reset reminder
@@ -569,7 +574,8 @@ class DiscordBot(commands.Bot):
             description="This post has been closed due to the original poster leaving the server.",
         )
         await thread.send(embed=embed)
-        post_tags = self.track_posts[thread.owner.id][2] + self.tag.solved_closed
+        post_tags = self.track_posts[thread.owner.id][2]
+        post_tags.append(self.tag.solved_closed)
         await thread.edit(
             archived=True,
             locked=True,
@@ -607,7 +613,8 @@ class DiscordBot(commands.Bot):
         )
 
         await thread.send(thread.owner.mention, embed=embed, view=view)
-        post_tags = self.track_posts[thread.owner.id][2] + self.tags.inactive
+        post_tags = self.track_posts[thread.owner.id][2]
+        post_tags.append(self.tags.inactive)
         await thread.edit(applied_tags=post_tags)
 
     @tasks.loop(minutes=10)
@@ -640,7 +647,8 @@ class DiscordBot(commands.Bot):
             description="This post has been closed due to inactivity.",
         )
         await thread.send(embed=embed)
-        post_tags = self.track_posts[thread.owner.id][2] + self.tags.solved_closed
+        post_tags = self.track_posts[thread.owner.id][2]
+        post_tags.append(self.tags.solved_closed)
         await thread.edit(
             archived=True,
             locked=True,
@@ -694,3 +702,4 @@ async def get_forum_tags(ctx):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN, root_logger=True)
+
