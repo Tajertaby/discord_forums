@@ -128,7 +128,7 @@ class CloseButton(BaseButton):
         await self.thread.edit(
             archived=True,
             locked=True,
-            applied_tags=[self.tags.solved_closed],
+            applied_tags=[self.bot.tags.solved_closed],
             reason=f"Closed by {interaction.user}",
         )
 
