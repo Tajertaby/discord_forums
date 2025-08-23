@@ -125,12 +125,10 @@ class CloseButton(BaseButton):
             description=f"This post has been closed by {interaction.user.mention} ({interaction.user.name}).",
         )
         await interaction.followup.send(embed=embed)
-        post_tags = self.track_posts[self.thread.owner.id][2]
-        post_tags+ self.tag.solved_closed
         await self.thread.edit(
             archived=True,
             locked=True,
-            applied_tags=post_tags,
+            applied_tags=[self.tag.solved_closed],
             reason=f"Closed by {interaction.user}",
         )
 
@@ -447,12 +445,10 @@ class DiscordBot(commands.Bot):
                 description=f"Closing this post because you already have an [active post]({existing_thread.jump_url if existing_thread else 'unknown'}).",
             )
             await thread.send(thread.owner.mention, embed=embed)
-            post_tags = self.track_posts[thread.owner.id][2]
-            post_tags.append(self.tags.solved_closed)
             await thread.edit(
                 archived=True,
                 locked=True,
-                applied_tags=post_tags,
+                applied_tags=[self.tag.solved_closed],
                 reason="OP already has an active post.",
             )
 
@@ -462,7 +458,8 @@ class DiscordBot(commands.Bot):
     async def _setup_new_thread(self, thread: discord.Thread):
         """Setup a new thread with initial configuration."""
         # Track the thread
-        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, thread.applied_tags]
+        user_tags = thread.applied_tags.copy()
+        self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, user_tags]
         post_tags = self.track_posts[thread.owner.id][2]
         post_tags.append(self.tags.awaiting_response)
         # Configure thread
@@ -574,12 +571,10 @@ class DiscordBot(commands.Bot):
             description="This post has been closed due to the original poster leaving the server.",
         )
         await thread.send(embed=embed)
-        post_tags = self.track_posts[thread.owner.id][2]
-        post_tags.append(self.tag.solved_closed)
         await thread.edit(
             archived=True,
             locked=True,
-            applied_tags=post_tags,
+            applied_tags=[self.tag.solved_closed],
             reason="Automatically closed - OP left the server",
         )
 
@@ -614,7 +609,7 @@ class DiscordBot(commands.Bot):
 
         await thread.send(thread.owner.mention, embed=embed, view=view)
         post_tags = self.track_posts[thread.owner.id][2]
-        post_tags.append(self.tags.inactive)
+        post_tags.append(self.tag.inactive)
         await thread.edit(applied_tags=post_tags)
 
     @tasks.loop(minutes=10)
@@ -647,12 +642,10 @@ class DiscordBot(commands.Bot):
             description="This post has been closed due to inactivity.",
         )
         await thread.send(embed=embed)
-        post_tags = self.track_posts[thread.owner.id][2]
-        post_tags.append(self.tags.solved_closed)
         await thread.edit(
             archived=True,
             locked=True,
-            applied_tags=post_tags,
+            applied_tags=[self.tag.solved_closed],
             reason="Inactivity for 48 hours",
         )
 
@@ -702,4 +695,3 @@ async def get_forum_tags(ctx):
 
 if __name__ == "__main__":
     bot.run(DISCORD_TOKEN, root_logger=True)
-
