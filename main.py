@@ -128,7 +128,7 @@ class CloseButton(BaseButton):
         await self.thread.edit(
             archived=True,
             locked=True,
-            applied_tags=[self.tag.solved_closed],
+            applied_tags=[self.tags.solved_closed],
             reason=f"Closed by {interaction.user}",
         )
 
@@ -448,7 +448,7 @@ class DiscordBot(commands.Bot):
             await thread.edit(
                 archived=True,
                 locked=True,
-                applied_tags=[self.tag.solved_closed],
+                applied_tags=[self.tags.solved_closed],
                 reason="OP already has an active post.",
             )
 
@@ -574,7 +574,7 @@ class DiscordBot(commands.Bot):
         await thread.edit(
             archived=True,
             locked=True,
-            applied_tags=[self.tag.solved_closed],
+            applied_tags=[self.tags.solved_closed],
             reason="Automatically closed - OP left the server",
         )
 
@@ -645,7 +645,7 @@ class DiscordBot(commands.Bot):
         await thread.edit(
             archived=True,
             locked=True,
-            applied_tags=[self.tag.solved_closed],
+            applied_tags=[self.tags.solved_closed],
             reason="Inactivity for 48 hours",
         )
 
