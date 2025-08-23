@@ -461,7 +461,7 @@ class DiscordBot(commands.Bot):
         user_tags = tuple(thread.applied_tags.copy())
         self.track_posts[thread.owner.id] = [thread.id, thread.owner.id, user_tags]
         post_tags = list(self.track_posts[thread.owner.id][2])
-        post_tags.append(self.tags.awaiting_response)
+        post_tags.insert(0, self.tags.awaiting_response)
 
         # Configure thread
         await thread.edit(slowmode_delay=2, applied_tags=post_tags)
@@ -533,7 +533,7 @@ class DiscordBot(commands.Bot):
         # Update thread status
         if self.tags.in_progress not in thread.applied_tags:
             post_tags = list(self.track_posts[thread.owner.id][2])
-            post_tags.append(self.tags.in_progress)
+            post_tags.insert(0, self.tags.in_progress)
             await thread.edit(applied_tags=post_tags)
 
         # Reset reminder
@@ -610,7 +610,7 @@ class DiscordBot(commands.Bot):
 
         await thread.send(thread.owner.mention, embed=embed, view=view)
         post_tags = list(self.track_posts[thread.owner.id][2])
-        post_tags.append(self.tag.inactive)
+        post_tags.insert(0, self.tag.inactive)
         await thread.edit(applied_tags=post_tags)
 
     @tasks.loop(minutes=10)
