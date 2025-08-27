@@ -610,7 +610,7 @@ class DiscordBot(commands.Bot):
 
         await thread.send(thread.owner.mention, embed=embed, view=view)
         post_tags = list(self.track_posts[thread.owner.id][2])
-        post_tags.insert(0, self.tag.inactive)
+        post_tags.insert(0, self.tags.inactive)
         await thread.edit(applied_tags=post_tags)
 
     @tasks.loop(minutes=10)
